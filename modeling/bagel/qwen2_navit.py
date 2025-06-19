@@ -813,111 +813,111 @@ class Qwen2MoTDecoderLayer(nn.Module):
         return packed_query_sequence, past_key_values
 
 
-class Qwen2MoEDecoderLayer(nn.Module):
-    def __init__(self, config, layer_idx: Optional[int] = None):
-        super().__init__()
-        self.hidden_size = config.hidden_size
+# class Qwen2MoEDecoderLayer(nn.Module):
+#     def __init__(self, config, layer_idx: Optional[int] = None):
+#         super().__init__()
+#         self.hidden_size = config.hidden_size
 
-        self.self_attn = PackedAttention(config, layer_idx)
+#         self.self_attn = PackedAttention(config, layer_idx)
 
-        self.mlp = Qwen2MLP(config)
-        self.mlp_moe_gen = Qwen2MLP(config)
-        self.input_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.post_attention_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+#         self.mlp = Qwen2MLP(config)
+#         self.mlp_moe_gen = Qwen2MLP(config)
+#         self.input_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+#         self.post_attention_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-    def forward(self, *args, **kwargs):
-        if self.training:
-            return self.forward_train(*args, **kwargs)
-        else:
-            return self.forward_inference(*args, **kwargs)
+#     def forward(self, *args, **kwargs):
+#         if self.training:
+#             return self.forward_train(*args, **kwargs)
+#         else:
+#             return self.forward_inference(*args, **kwargs)
 
-    def forward_train(
-        self,
-        packed_sequence: torch.Tensor,
-        sample_lens: List[int],
-        attention_mask,
-        packed_position_embeddings: Tuple[torch.Tensor, torch.Tensor],
-        packed_und_token_indexes: torch.LongTensor,
-        packed_gen_token_indexes: torch.LongTensor,
-    ) -> torch.Tensor:
+#     def forward_train(
+#         self,
+#         packed_sequence: torch.Tensor,
+#         sample_lens: List[int],
+#         attention_mask,
+#         packed_position_embeddings: Tuple[torch.Tensor, torch.Tensor],
+#         packed_und_token_indexes: torch.LongTensor,
+#         packed_gen_token_indexes: torch.LongTensor,
+#     ) -> torch.Tensor:
 
-        residual = packed_sequence
-        packed_sequence = self.input_layernorm(packed_sequence)
+#         residual = packed_sequence
+#         packed_sequence = self.input_layernorm(packed_sequence)
 
-        # Self Attention
-        packed_sequence = self.self_attn(
-            packed_sequence=packed_sequence,
-            sample_lens=sample_lens,
-            attention_mask=attention_mask,
-            packed_position_embeddings=packed_position_embeddings,
-        )
-        packed_sequence = residual + packed_sequence
+#         # Self Attention
+#         packed_sequence = self.self_attn(
+#             packed_sequence=packed_sequence,
+#             sample_lens=sample_lens,
+#             attention_mask=attention_mask,
+#             packed_position_embeddings=packed_position_embeddings,
+#         )
+#         packed_sequence = residual + packed_sequence
 
-        # Fully Connected
-        residual = packed_sequence
-        packed_sequence = self.post_attention_layernorm(packed_sequence)
+#         # Fully Connected
+#         residual = packed_sequence
+#         packed_sequence = self.post_attention_layernorm(packed_sequence)
 
-        packed_sequence_new = packed_sequence.new_zeros(packed_sequence.shape)
-        packed_sequence_und = self.mlp(packed_sequence[packed_und_token_indexes])
-        packed_sequence_gen = self.mlp_moe_gen(packed_sequence[packed_gen_token_indexes])
-        packed_sequence_new[packed_und_token_indexes] = packed_sequence_und
-        packed_sequence_new[packed_gen_token_indexes] = packed_sequence_gen
+#         packed_sequence_new = packed_sequence.new_zeros(packed_sequence.shape)
+#         packed_sequence_und = self.mlp(packed_sequence[packed_und_token_indexes])
+#         packed_sequence_gen = self.mlp_moe_gen(packed_sequence[packed_gen_token_indexes])
+#         packed_sequence_new[packed_und_token_indexes] = packed_sequence_und
+#         packed_sequence_new[packed_gen_token_indexes] = packed_sequence_gen
 
-        packed_sequence = residual + packed_sequence_new
+#         packed_sequence = residual + packed_sequence_new
 
-        return packed_sequence
+#         return packed_sequence
 
-    def forward_inference(
-        self,
-        packed_query_sequence: torch.Tensor,
-        query_lens: torch.Tensor,
-        packed_query_position_embeddings: torch.Tensor,
-        packed_query_indexes: torch.Tensor,
-        past_key_values: Optional[NaiveCache] = None,
-        key_values_lens: Optional[torch.Tensor] = None,
-        packed_key_value_indexes: Optional[torch.Tensor] = None,
-        update_past_key_values=True,
-        is_causal=True,
-        mode="und",
-        packed_vae_token_indexes=None,
-        packed_text_indexes=None,
-    ) -> BaseNavitOutputWithPast:
+#     def forward_inference(
+#         self,
+#         packed_query_sequence: torch.Tensor,
+#         query_lens: torch.Tensor,
+#         packed_query_position_embeddings: torch.Tensor,
+#         packed_query_indexes: torch.Tensor,
+#         past_key_values: Optional[NaiveCache] = None,
+#         key_values_lens: Optional[torch.Tensor] = None,
+#         packed_key_value_indexes: Optional[torch.Tensor] = None,
+#         update_past_key_values=True,
+#         is_causal=True,
+#         mode="und",
+#         packed_vae_token_indexes=None,
+#         packed_text_indexes=None,
+#     ) -> BaseNavitOutputWithPast:
 
-        residual = packed_query_sequence
-        packed_query_sequence = self.input_layernorm(packed_query_sequence)
+#         residual = packed_query_sequence
+#         packed_query_sequence = self.input_layernorm(packed_query_sequence)
 
-        # Self Attention
-        packed_query_sequence, past_key_values = self.self_attn(
-            packed_query_sequence=packed_query_sequence,
-            query_lens=query_lens,
-            packed_query_position_embeddings=packed_query_position_embeddings,
-            packed_query_indexes=packed_query_indexes,
-            past_key_values=past_key_values,
-            key_values_lens=key_values_lens,
-            packed_key_value_indexes=packed_key_value_indexes,
-            update_past_key_values=update_past_key_values,
-            is_causal=is_causal,
-        )
-        packed_query_sequence = residual + packed_query_sequence
+#         # Self Attention
+#         packed_query_sequence, past_key_values = self.self_attn(
+#             packed_query_sequence=packed_query_sequence,
+#             query_lens=query_lens,
+#             packed_query_position_embeddings=packed_query_position_embeddings,
+#             packed_query_indexes=packed_query_indexes,
+#             past_key_values=past_key_values,
+#             key_values_lens=key_values_lens,
+#             packed_key_value_indexes=packed_key_value_indexes,
+#             update_past_key_values=update_past_key_values,
+#             is_causal=is_causal,
+#         )
+#         packed_query_sequence = residual + packed_query_sequence
 
-        # Fully Connected
-        residual = packed_query_sequence
-        packed_query_sequence = self.post_attention_layernorm(packed_query_sequence)
-        if mode == "und":
-            packed_query_sequence = self.mlp(packed_query_sequence)
-        elif mode == "gen":
-            packed_query_sequence_ = torch.zeros_like(packed_query_sequence).to(torch.bfloat16)
-            packed_query_sequence_[packed_text_indexes] = self.mlp(packed_query_sequence[packed_text_indexes])
-            packed_query_sequence_[packed_vae_token_indexes] = self.mlp_moe_gen(packed_query_sequence[packed_vae_token_indexes])
-            packed_query_sequence = packed_query_sequence_
-        packed_query_sequence = residual + packed_query_sequence
+#         # Fully Connected
+#         residual = packed_query_sequence
+#         packed_query_sequence = self.post_attention_layernorm(packed_query_sequence)
+#         if mode == "und":
+#             packed_query_sequence = self.mlp(packed_query_sequence)
+#         elif mode == "gen":
+#             packed_query_sequence_ = torch.zeros_like(packed_query_sequence).to(torch.bfloat16)
+#             packed_query_sequence_[packed_text_indexes] = self.mlp(packed_query_sequence[packed_text_indexes])
+#             packed_query_sequence_[packed_vae_token_indexes] = self.mlp_moe_gen(packed_query_sequence[packed_vae_token_indexes])
+#             packed_query_sequence = packed_query_sequence_
+#         packed_query_sequence = residual + packed_query_sequence
 
-        return packed_query_sequence, past_key_values
+#         return packed_query_sequence, past_key_values
 
 
 Decoder_layer_dict = {
     "Qwen2DecoderLayer": Qwen2DecoderLayer,
-    "Qwen2MoEDecoderLayer": Qwen2MoEDecoderLayer,
+    # "Qwen2MoEDecoderLayer": Qwen2MoEDecoderLayer,
     "Qwen2MoTDecoderLayer": partial(Qwen2MoTDecoderLayer, attn_module=PackedAttentionMoT),
 }
 

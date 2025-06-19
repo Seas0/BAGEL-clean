@@ -23,7 +23,7 @@ from safetensors.torch import load_file, save_file
 from modeling.bagel.modeling_utils import MLPconnector, TimestepEmbedder, PositionEmbedding
 from modeling.bagel.qwen2_navit import (
     Qwen2DecoderLayer, 
-    Qwen2MoEDecoderLayer, 
+    # Qwen2MoEDecoderLayer, 
     Qwen2MoTDecoderLayer,
 )
 from modeling.bagel.siglip_navit import SiglipEncoderLayer, SiglipVisionTransformer
@@ -60,7 +60,7 @@ def fsdp_wrapper(original_model, fsdp_config, ignored_modules=[]):
             transformer_auto_wrap_policy,
             transformer_layer_cls={
                 Qwen2DecoderLayer,
-                Qwen2MoEDecoderLayer,
+                # Qwen2MoEDecoderLayer,
                 Qwen2MoTDecoderLayer,
                 SiglipEncoderLayer,
                 SiglipVisionTransformer,
@@ -238,7 +238,7 @@ def grad_checkpoint_check_fn(module):
         Qwen2DecoderLayer, 
         SiglipEncoderLayer, 
         MLPconnector, 
-        Qwen2MoEDecoderLayer, 
+        # Qwen2MoEDecoderLayer, 
         Qwen2MoTDecoderLayer
     )
     return isinstance(module, module_options)
