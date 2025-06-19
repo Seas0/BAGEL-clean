@@ -53,14 +53,14 @@ def setup_models(model_path, device=0):
     
     # Load LLM
     llm_config = Qwen2Config.from_pretrained(os.path.join(model_path, "llm_config.json"))
-    llm_config.qk_norm = True
-    llm_config.tie_word_embeddings = False
-    llm_config.layer_module = "Qwen2MoTDecoderLayer"
+    # llm_config.qk_norm = True
+    # llm_config.tie_word_embeddings = False
+    # llm_config.layer_module = "Qwen2MoTDecoderLayer"
     
     # Load Vision model
     vit_config = SiglipVisionConfig.from_json_file(os.path.join(model_path, "vit_config.json"))
-    vit_config.rope = False
-    vit_config.num_hidden_layers = vit_config.num_hidden_layers - 1
+    # vit_config.rope = False
+    # vit_config.num_hidden_layers = vit_config.num_hidden_layers - 1
     
     # Load VAE
     vae_model, vae_config = load_ae(local_path=os.path.join(model_path, "ae.safetensors"))

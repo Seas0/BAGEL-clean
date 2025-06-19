@@ -399,9 +399,11 @@ def main():
         llm_config = Qwen2Config.from_json_file(os.path.join(model_args.model_path, "llm_config.json"))
     else:
         llm_config = Qwen2Config.from_pretrained(model_args.llm_path)
+    # TODO: clarify the unnecessary runtime overrides
     llm_config.layer_module = model_args.layer_module
     llm_config.qk_norm = model_args.llm_qk_norm
     llm_config.tie_word_embeddings = model_args.tie_word_embeddings
+    # END TODO
     llm_config.freeze_und = training_args.freeze_und
     if training_args.finetune_from_hf:
         language_model = Qwen2ForCausalLM(llm_config)
@@ -415,8 +417,10 @@ def main():
             vit_config = SiglipVisionConfig.from_json_file(os.path.join(model_args.model_path, "vit_config.json"))
         else:
             vit_config = SiglipVisionConfig.from_pretrained(model_args.vit_path)
+        # TODO: clarify the discrepancy between training setting and inference setting
         vit_config.num_hidden_layers = vit_config.num_hidden_layers + 1 + model_args.vit_select_layer
         vit_config.rope = model_args.vit_rope
+        # END TODO
         if training_args.finetune_from_hf:
             vit_model = SiglipVisionModel(vit_config)
         else:

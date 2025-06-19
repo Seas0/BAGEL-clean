@@ -37,13 +37,13 @@ model_path = args.model_path #Download from https://huggingface.co/ByteDance-See
 model_path = args.model_path 
 
 llm_config = Qwen2Config.from_json_file(os.path.join(model_path, "llm_config.json"))
-llm_config.qk_norm = True
-llm_config.tie_word_embeddings = False
-llm_config.layer_module = "Qwen2MoTDecoderLayer"
+# llm_config.qk_norm = True
+# llm_config.tie_word_embeddings = False
+# llm_config.layer_module = "Qwen2MoTDecoderLayer"
 
 vit_config = SiglipVisionConfig.from_json_file(os.path.join(model_path, "vit_config.json"))
-vit_config.rope = False
-vit_config.num_hidden_layers -= 1
+# vit_config.rope = False
+# vit_config.num_hidden_layers -= 1
 
 vae_model, vae_config = load_ae(local_path=os.path.join(model_path, "ae.safetensors"))
 
