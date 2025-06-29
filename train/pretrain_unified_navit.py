@@ -27,7 +27,7 @@ from data.dataset_base import DataConfig, PackedDataset, collate_wrapper
 from data.data_utils import add_special_tokens
 from modeling.autoencoder import load_ae
 from modeling.bagel import (
-    BagelConfig, Bagel, Qwen2Config, Qwen2ForCausalLM, SiglipVisionConfig, SiglipVisionModel
+    BagelConfig, Bagel, Qwen2NavitConfig, Qwen2ForCausalLM, SiglipVisionConfig, SiglipVisionModel
 )
 from modeling.qwen2 import Qwen2Tokenizer
 from train.train_utils import create_logger, get_latest_ckpt
@@ -396,9 +396,9 @@ def main():
 
     # Setup model:
     if training_args.finetune_from_hf:
-        llm_config = Qwen2Config.from_json_file(os.path.join(model_args.model_path, "llm_config.json"))
+        llm_config = Qwen2NavitConfig.from_json_file(os.path.join(model_args.model_path, "llm_config.json"))
     else:
-        llm_config = Qwen2Config.from_pretrained(model_args.llm_path)
+        llm_config = Qwen2NavitConfig.from_pretrained(model_args.llm_path)
     # TODO: clarify the unnecessary runtime overrides
     llm_config.layer_module = model_args.layer_module
     llm_config.qk_norm = model_args.llm_qk_norm

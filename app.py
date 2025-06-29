@@ -13,7 +13,7 @@ from inferencer import InterleaveInferencer
 from modeling.autoencoder import load_ae
 from modeling.bagel.modeling_qwen2_navit import NaiveCache
 from modeling.bagel import (
-    BagelConfig, Bagel, Qwen2Config, Qwen2ForCausalLM,
+    BagelConfig, Bagel, Qwen2NavitConfig, Qwen2ForCausalLM,
     SiglipVisionConfig, SiglipVisionModel
 )
 from modeling.qwen2 import Qwen2Tokenizer
@@ -36,7 +36,7 @@ model_path = args.model_path #Download from https://huggingface.co/ByteDance-See
 
 model_path = args.model_path 
 
-llm_config = Qwen2Config.from_json_file(os.path.join(model_path, "llm_config.json"))
+llm_config = Qwen2NavitConfig.from_json_file(os.path.join(model_path, "llm_config.json"))
 # llm_config.qk_norm = True
 # llm_config.tie_word_embeddings = False
 # llm_config.layer_module = "Qwen2MoTDecoderLayer"

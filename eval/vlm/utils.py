@@ -16,7 +16,7 @@ from data.data_utils import add_special_tokens, pil_img2rgb
 from modeling.bagel import (
     BagelConfig, 
     Bagel, 
-    Qwen2Config, 
+    Qwen2NavitConfig, 
     Qwen2ForCausalLM, 
     SiglipVisionConfig, 
     SiglipVisionModel,
@@ -28,7 +28,7 @@ from data.transforms import ImageTransform
 
 
 def load_model_and_tokenizer(args):
-    llm_config = Qwen2Config.from_json_file(os.path.join(args.model_path, "llm_config.json"))
+    llm_config = Qwen2NavitConfig.from_json_file(os.path.join(args.model_path, "llm_config.json"))
     # llm_config.qk_norm = True
     # llm_config.tie_word_embeddings = False
     # llm_config.layer_module ="Qwen2MoTDecoderLayer"

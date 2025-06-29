@@ -1,6 +1,17 @@
-from modeling.qwen2.configuration_qwen2 import Qwen2Config as _Qwen2Config
+# Copyright 2024 The Qwen Team and The HuggingFace Inc. team.
+# SPDX-License-Identifier: Apache-2.0
 
-class Qwen2Config(_Qwen2Config):
+"""Qwen2Navit model configuration"""
+
+from transformers.configuration_utils import PretrainedConfig
+from transformers.modeling_rope_utils import rope_config_validation
+from transformers.utils import logging
+
+
+logger = logging.get_logger(__name__)
+
+
+class Qwen2NavitConfig(PretrainedConfig):
     r"""
     This is the configuration class to store the configuration of a [`Qwen2Model`]. It is used to instantiate a
     Qwen2 model according to the specified arguments, defining the model architecture. Instantiating a configuration
@@ -9,6 +20,7 @@ class Qwen2Config(_Qwen2Config):
 
     Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
     documentation from [`PretrainedConfig`] for more information.
+
 
     Args:
         vocab_size (`int`, *optional*, defaults to 151936):
@@ -89,21 +101,9 @@ class Qwen2Config(_Qwen2Config):
             The number of layers that use SWA (Sliding Window Attention). The bottom layers use SWA while the top use full attention.
         attention_dropout (`float`, *optional*, defaults to 0.0):
             The dropout ratio for the attention probabilities.
+    """
 
-    ```python
-    >>> from transformers import Qwen2Model, Qwen2Config
-
-    >>> # Initializing a Qwen2 style configuration
-    >>> configuration = Qwen2Config()
-
-    >>> # Initializing a model from the Qwen2-7B style configuration
-    >>> model = Qwen2Model(configuration)
-
-    >>> # Accessing the model configuration
-    >>> configuration = model.config
-    ```"""
-
-    model_type = "qwen2"
+    model_type = "qwen2_navit"
     keys_to_ignore_at_inference = ["past_key_values"]
 
     def __init__(
@@ -129,33 +129,47 @@ class Qwen2Config(_Qwen2Config):
         is_causal=True,
         _attn_implementation="flash_attention_2",
         qk_norm=True,
-        layer_module="Qwen2DecoderLayer",
+        layer_module="Qwen2MoTDecoderLayer",
         freeze_und=False,
         **kwargs,
     ):
-        super().__init__(
-            vocab_size=vocab_size,
-            hidden_size=hidden_size,
-            intermediate_size=intermediate_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            num_key_value_heads=num_key_value_heads,
-            hidden_act=hidden_act,
-            max_position_embeddings=max_position_embeddings,
-            initializer_range=initializer_range,
-            rms_norm_eps=rms_norm_eps,
-            use_cache=use_cache,
-            tie_word_embeddings=tie_word_embeddings,
-            rope_theta=rope_theta,
-            rope_scaling=rope_scaling,
-            use_sliding_window=use_sliding_window,
-            sliding_window=sliding_window,
-            max_window_layers=max_window_layers,
-            attention_dropout=attention_dropout,
-            is_causal=is_causal,
-            _attn_implementation=_attn_implementation,
-            **kwargs,
-        )
+        self.vocab_size = vocab_size
+        self.max_position_embeddings = max_position_embeddings
+        self.hidden_size = hidden_size
+        self.intermediate_size = intermediate_size
+        self.num_hidden_layers = num_hidden_layers
+        self.num_attention_heads = num_attention_heads
+        self.use_sliding_window = use_sliding_window
+        self.sliding_window = sliding_window if use_sliding_window else None
+        self.max_window_layers = max_window_layers
+
+        # for backward compatibility
+        if num_key_value_heads is None:
+            num_key_value_heads = num_attention_heads
+
+        self.num_key_value_heads = num_key_value_heads
+        self.hidden_act = hidden_act
+        self.initializer_range = initializer_range
+        self.rms_norm_eps = rms_norm_eps
+        self.use_cache = use_cache
+        self.rope_theta = rope_theta
+        self.rope_scaling = rope_scaling
+        self.attention_dropout = attention_dropout
+        self.is_causal = is_causal
+        self._attn_implementation = _attn_implementation
+
+        # Validate the correctness of rotary position embeddings parameters
+        # BC: if there is a 'type' field, move it to 'rope_type'.
+        if self.rope_scaling is not None and "type" in self.rope_scaling:
+            self.rope_scaling["rope_type"] = self.rope_scaling["type"]
+        rope_config_validation(self)
+
+        # Qwen2Navit specific parameters for Bagel MoT, not in Qwen2Config
         self.qk_norm = qk_norm
         self.layer_module = layer_module
         self.freeze_und = freeze_und
+
+        super().__init__(
+            tie_word_embeddings=tie_word_embeddings,
+            **kwargs,
+        )

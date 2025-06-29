@@ -42,7 +42,7 @@ from transformers.utils import (
     replace_return_docstrings,
 )
 
-from .configuration_qwen2_navit import Qwen2Config
+from .configuration_qwen2_navit import Qwen2NavitConfig
 
 if is_flash_attn_2_available():
     from transformers.modeling_flash_attention_utils import _flash_attention_forward
@@ -57,8 +57,8 @@ if is_flash_attn_2_available():
 logger = logging.get_logger(__name__)
 
 
-# Copied from transformers.models.llama.modeling_llama.LlamaRMSNorm with Llama->Qwen2
-class Qwen2RMSNorm(nn.Module):
+# Copied from transformers.models.llama.modeling_llama.LlamaRMSNorm with Llama->Qwen2Navit
+class Qwen2NavitRMSNorm(nn.Module):
     def __init__(self, hidden_size, eps=1e-6):
         """
         Qwen2RMSNorm is equivalent to T5LayerNorm
@@ -78,8 +78,8 @@ class Qwen2RMSNorm(nn.Module):
         return f"{tuple(self.weight.shape)}, eps={self.variance_epsilon}"
 
 
-# Copied from transformers.models.llama.modeling_llama.LlamaRotaryEmbedding with Llama->Qwen2
-class Qwen2RotaryEmbedding(nn.Module):
+# Copied from transformers.models.llama.modeling_llama.LlamaRotaryEmbedding with Llama->Qwen2Navit
+class Qwen2NavitRotaryEmbedding(nn.Module):
     def __init__(
         self,
         dim=None,
@@ -88,7 +88,7 @@ class Qwen2RotaryEmbedding(nn.Module):
         device=None,
         scaling_factor=1.0,
         rope_type="default",
-        config: Optional[Qwen2Config] = None,
+        config: Optional[Qwen2NavitConfig] = None,
     ):
         super().__init__()
         # TODO (joao): remove the `if` below, only used for BC
@@ -166,8 +166,8 @@ class Qwen2RotaryEmbedding(nn.Module):
         return cos.to(dtype=x.dtype), sin.to(dtype=x.dtype)
 
 
-# Copied from transformers.models.mistral.modeling_mistral.MistralMLP with Mistral->Qwen2
-class Qwen2MLP(nn.Module):
+# Copied from transformers.models.mistral.modeling_mistral.MistralMLP with Mistral->Qwen2Navit
+class Qwen2NavitMLP(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.hidden_size = config.hidden_size
@@ -259,6 +259,7 @@ def pad_sequence(tensor, pad_size):
     return torch.cat([tensor, pad_tensor], dim=1)
 
 
+# TODO: Make a better implementation of this monstrosity
 class PackedAttentionMoT(nn.Module):
     def __init__(self, config, layer_idx: Optional[int] = None):
         super().__init__()
@@ -292,10 +293,10 @@ class PackedAttentionMoT(nn.Module):
         self.o_proj = nn.Linear(self.num_heads * self.head_dim, self.hidden_size, bias=False)
 
         if self.config.qk_norm:
-            self.q_norm = Qwen2RMSNorm(self.head_dim, eps=config.rms_norm_eps)
-            self.k_norm = Qwen2RMSNorm(self.head_dim, eps=config.rms_norm_eps)
-            self.q_norm_moe_gen = Qwen2RMSNorm(self.head_dim, eps=config.rms_norm_eps)
-            self.k_norm_moe_gen = Qwen2RMSNorm(self.head_dim, eps=config.rms_norm_eps)
+            self.q_norm = Qwen2NavitRMSNorm(self.head_dim, eps=config.rms_norm_eps)
+            self.k_norm = Qwen2NavitRMSNorm(self.head_dim, eps=config.rms_norm_eps)
+            self.q_norm_moe_gen = Qwen2NavitRMSNorm(self.head_dim, eps=config.rms_norm_eps)
+            self.k_norm_moe_gen = Qwen2NavitRMSNorm(self.head_dim, eps=config.rms_norm_eps)
         else:
             self.q_norm = nn.Identity()
             self.k_norm = nn.Identity()
@@ -540,6 +541,7 @@ class PackedAttentionMoT(nn.Module):
         return packed_attn_output, past_key_values
 
 
+# Currently not renamed due to configuration in released pretrained models.
 class Qwen2MoTDecoderLayer(nn.Module):
     def __init__(
         self,
@@ -553,12 +555,12 @@ class Qwen2MoTDecoderLayer(nn.Module):
 
         self.self_attn = attn_module(config, layer_idx)
 
-        self.mlp = Qwen2MLP(config)
-        self.mlp_moe_gen = Qwen2MLP(config)
-        self.input_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.input_layernorm_moe_gen = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.post_attention_layernorm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.post_attention_layernorm_moe_gen = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.mlp = Qwen2NavitMLP(config)
+        self.mlp_moe_gen = Qwen2NavitMLP(config)
+        self.input_layernorm = Qwen2NavitRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.input_layernorm_moe_gen = Qwen2NavitRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.post_attention_layernorm = Qwen2NavitRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.post_attention_layernorm_moe_gen = Qwen2NavitRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
     def forward(self, *args, **kwargs):
         if self.training:
@@ -681,7 +683,7 @@ class Qwen2MoTDecoderLayer(nn.Module):
         return packed_query_sequence, past_key_values
 
 
-QWEN2_START_DOCSTRING = r"""
+QWEN2NAVIT_START_DOCSTRING = r"""
     This model inherits from [`PreTrainedModel`]. Check the superclass documentation for the generic methods the
     library implements for all its model (such as downloading or saving, resizing the input embeddings, pruning heads
     etc.)
@@ -691,7 +693,7 @@ QWEN2_START_DOCSTRING = r"""
     and behavior.
 
     Parameters:
-        config ([`Qwen2Config`]):
+        config ([`Qwen2NavitConfig`]):
             Model configuration class with all the parameters of the model. Initializing with a config file does not
             load the weights associated with the model, only the configuration. Check out the
             [`~PreTrainedModel.from_pretrained`] method to load the model weights.
@@ -700,10 +702,10 @@ QWEN2_START_DOCSTRING = r"""
 
 @add_start_docstrings(
     "The bare Qwen2 Model outputting raw hidden-states without any specific head on top.",
-    QWEN2_START_DOCSTRING,
+    QWEN2NAVIT_START_DOCSTRING,
 )
-class Qwen2PreTrainedModel(PreTrainedModel):
-    config_class = Qwen2Config
+class Qwen2NavitPreTrainedModel(PreTrainedModel):
+    config_class = Qwen2NavitConfig
     base_model_prefix = "model"
     supports_gradient_checkpointing = True
     _no_split_modules = ["Qwen2DecoderLayer"]
@@ -725,7 +727,7 @@ class Qwen2PreTrainedModel(PreTrainedModel):
                 module.weight.data[module.padding_idx].zero_()
 
 
-class Qwen2Model(Qwen2PreTrainedModel):
+class Qwen2NavitModel(Qwen2NavitPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.padding_idx = config.pad_token_id
@@ -738,10 +740,10 @@ class Qwen2Model(Qwen2PreTrainedModel):
             [Qwen2MoTDecoderLayer(config, layer_idx) for layer_idx in range(config.num_hidden_layers)]
         )
 
-        self.norm = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.norm = Qwen2NavitRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         if self.use_moe:
-            self.norm_moe_gen = Qwen2RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
-        self.rotary_emb = Qwen2RotaryEmbedding(config=config)
+            self.norm_moe_gen = Qwen2NavitRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        self.rotary_emb = Qwen2NavitRotaryEmbedding(config=config)
 
         # Initialize weights and apply final processing
         self.post_init()
@@ -864,12 +866,13 @@ class Qwen2Model(Qwen2PreTrainedModel):
         )
 
 
-class Qwen2ForCausalLM(Qwen2PreTrainedModel):
+# Currently not renamed due to configuration in released pretrained models.
+class Qwen2ForCausalLM(Qwen2NavitPreTrainedModel):
     _tied_weights_keys = ["lm_head.weight"]
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = Qwen2Model(config)
+        self.model = Qwen2NavitModel(config)
         self.vocab_size = config.vocab_size
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 

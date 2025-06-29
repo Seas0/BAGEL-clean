@@ -18,7 +18,7 @@ from datasets import load_dataset
 # Import model components
 from data.data_utils import add_special_tokens
 from modeling.bagel import (
-    BagelConfig, Bagel, Qwen2Config, 
+    BagelConfig, Bagel, Qwen2NavitConfig, 
     Qwen2ForCausalLM, SiglipVisionConfig, SiglipVisionModel
 )
 from modeling.qwen2 import Qwen2Tokenizer
@@ -52,7 +52,7 @@ def setup_models(model_path, device=0):
     torch.cuda.set_device(device)
     
     # Load LLM
-    llm_config = Qwen2Config.from_pretrained(os.path.join(model_path, "llm_config.json"))
+    llm_config = Qwen2NavitConfig.from_pretrained(os.path.join(model_path, "llm_config.json"))
     # llm_config.qk_norm = True
     # llm_config.tie_word_embeddings = False
     # llm_config.layer_module = "Qwen2MoTDecoderLayer"

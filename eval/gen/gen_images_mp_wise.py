@@ -10,7 +10,7 @@ import torch
 import torch.distributed as dist
 from data.data_utils import add_special_tokens
 from modeling.bagel import (
-    BagelConfig, Bagel, Qwen2Config, Qwen2ForCausalLM, SiglipVisionConfig, SiglipVisionModel
+    BagelConfig, Bagel, Qwen2NavitConfig, Qwen2ForCausalLM, SiglipVisionConfig, SiglipVisionModel
 )
 from modeling.qwen2 import Qwen2Tokenizer
 from modeling.autoencoder import load_ae
@@ -264,7 +264,7 @@ if __name__ == "__main__":
     if rank == 0:
         print(f"Output images are saved in {output_dir}")
 
-    llm_config = Qwen2Config.from_json_file(os.path.join(args.model_path, "llm_config.json"))
+    llm_config = Qwen2NavitConfig.from_json_file(os.path.join(args.model_path, "llm_config.json"))
     # llm_config.qk_norm = True
     # llm_config.tie_word_embeddings = False
     # llm_config.layer_module = "Qwen2MoTDecoderLayer"
