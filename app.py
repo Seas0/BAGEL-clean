@@ -16,7 +16,7 @@ from modeling.bagel import (
     BagelConfig, Bagel, Qwen2NavitConfig, Qwen2ForCausalLM,
     SiglipVisionConfig, SiglipVisionModel
 )
-from modeling.qwen2 import Qwen2Tokenizer
+from transformers.models.qwen2.tokenization_qwen2 import Qwen2Tokenizer
 
 import argparse
 from accelerate.utils import BnbQuantizationConfig, load_and_quantize_model

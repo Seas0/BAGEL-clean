@@ -1,2 +1,0 @@
-from .tokenization_qwen2 import Qwen2Tokenizer
-from .tokenization_qwen2_fast import Qwen2TokenizerFast

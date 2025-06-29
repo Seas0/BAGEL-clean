@@ -29,7 +29,7 @@ from modeling.autoencoder import load_ae
 from modeling.bagel import (
     BagelConfig, Bagel, Qwen2NavitConfig, Qwen2ForCausalLM, SiglipVisionConfig, SiglipVisionModel
 )
-from modeling.qwen2 import Qwen2Tokenizer
+from transformers.models.qwen2.tokenization_qwen2 import Qwen2Tokenizer
 from train.train_utils import create_logger, get_latest_ckpt
 from train.fsdp_utils import (
     FSDPCheckpoint, FSDPConfig, grad_checkpoint_check_fn, fsdp_wrapper, 

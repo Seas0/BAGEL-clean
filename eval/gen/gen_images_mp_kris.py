@@ -13,7 +13,7 @@ from data.transforms import ImageTransform
 from modeling.bagel import (
     BagelConfig, Bagel, Qwen2NavitConfig, Qwen2ForCausalLM, SiglipVisionConfig, SiglipVisionModel
 )
-from modeling.qwen2 import Qwen2Tokenizer
+from transformers.models.qwen2.tokenization_qwen2 import Qwen2Tokenizer
 from modeling.autoencoder import load_ae
 
 import copy

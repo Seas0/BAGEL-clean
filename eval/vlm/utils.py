@@ -21,7 +21,7 @@ from modeling.bagel import (
     SiglipVisionConfig, 
     SiglipVisionModel,
 )
-from modeling.qwen2 import Qwen2Tokenizer
+from transformers.models.qwen2.tokenization_qwen2 import Qwen2Tokenizer
 from safetensors.torch import load_file
 
 from data.transforms import ImageTransform
