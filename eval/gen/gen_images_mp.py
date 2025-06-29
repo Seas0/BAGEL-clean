@@ -16,7 +16,7 @@ from modeling.qwen2 import Qwen2Tokenizer
 from modeling.autoencoder import load_ae
 
 from PIL import Image
-from modeling.bagel.qwen2_navit import NaiveCache
+from modeling.bagel.modeling_qwen2_navit import NaiveCache
 
 
 def move_generation_input_to_device(generation_input, device):

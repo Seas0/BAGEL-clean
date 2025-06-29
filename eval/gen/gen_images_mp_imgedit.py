@@ -18,7 +18,7 @@ from modeling.autoencoder import load_ae
 
 import copy
 from PIL import Image
-from modeling.bagel.qwen2_navit import NaiveCache
+from modeling.bagel.modeling_qwen2_navit import NaiveCache
 
 
 # 分布式初始化函数

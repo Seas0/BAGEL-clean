@@ -8,7 +8,7 @@ from PIL import Image
 import torch
 
 from data.data_utils import pil_img2rgb
-from modeling.bagel.qwen2_navit import NaiveCache
+from modeling.bagel.modeling_qwen2_navit import NaiveCache
 
 
 
@@ -176,6 +176,7 @@ class InterleaveInferencer:
         latent = latent.reshape(1, h, w, self.model.latent_patch_size, self.model.latent_patch_size, self.model.latent_channel)
         latent = torch.einsum("nhwpqc->nchpwq", latent)
         latent = latent.reshape(1, self.model.latent_channel, h * self.model.latent_patch_size, w * self.model.latent_patch_size)
+        latent = latent.to(self.vae_model.decoder.conv_in.weight)
         image = self.vae_model.decode(latent)
         image = (image * 0.5 + 0.5).clamp(0, 1)[0].permute(1, 2, 0) * 255
         image = Image.fromarray((image).to(torch.uint8).cpu().numpy())

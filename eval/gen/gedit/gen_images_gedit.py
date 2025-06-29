@@ -23,7 +23,7 @@ from modeling.bagel import (
 )
 from modeling.qwen2 import Qwen2Tokenizer
 from data.transforms import ImageTransform
-from modeling.bagel.qwen2_navit import NaiveCache
+from modeling.bagel.modeling_qwen2_navit import NaiveCache
 from modeling.autoencoder import load_ae
 
 

@@ -22,7 +22,6 @@ from torch.nn.attention.flex_attention import flex_attention
 from transformers.utils import ModelOutput
 
 from flash_attn import flash_attn_varlen_func
-from modeling.qwen2.configuration_qwen2 import Qwen2Config as _Qwen2Config
 
 from transformers.activations import ACT2FN
 from transformers.cache_utils import Cache, DynamicCache
@@ -43,6 +42,7 @@ from transformers.utils import (
     replace_return_docstrings,
 )
 
+from .configuration_qwen2_navit import Qwen2Config
 
 if is_flash_attn_2_available():
     from transformers.modeling_flash_attention_utils import _flash_attention_forward
@@ -55,167 +55,6 @@ if is_flash_attn_2_available():
 
 
 logger = logging.get_logger(__name__)
-
-
-class Qwen2Config(_Qwen2Config):
-    r"""
-    This is the configuration class to store the configuration of a [`Qwen2Model`]. It is used to instantiate a
-    Qwen2 model according to the specified arguments, defining the model architecture. Instantiating a configuration
-    with the defaults will yield a similar configuration to that of
-    Qwen2-7B-beta [Qwen/Qwen2-7B-beta](https://huggingface.co/Qwen/Qwen2-7B-beta).
-
-    Configuration objects inherit from [`PretrainedConfig`] and can be used to control the model outputs. Read the
-    documentation from [`PretrainedConfig`] for more information.
-
-    Args:
-        vocab_size (`int`, *optional*, defaults to 151936):
-            Vocabulary size of the Qwen2 model. Defines the number of different tokens that can be represented by the
-            `inputs_ids` passed when calling [`Qwen2Model`]
-        hidden_size (`int`, *optional*, defaults to 4096):
-            Dimension of the hidden representations.
-        intermediate_size (`int`, *optional*, defaults to 22016):
-            Dimension of the MLP representations.
-        num_hidden_layers (`int`, *optional*, defaults to 32):
-            Number of hidden layers in the Transformer encoder.
-        num_attention_heads (`int`, *optional*, defaults to 32):
-            Number of attention heads for each attention layer in the Transformer encoder.
-        num_key_value_heads (`int`, *optional*, defaults to 32):
-            This is the number of key_value heads that should be used to implement Grouped Query Attention. If
-            `num_key_value_heads=num_attention_heads`, the model will use Multi Head Attention (MHA), if
-            `num_key_value_heads=1` the model will use Multi Query Attention (MQA) otherwise GQA is used. When
-            converting a multi-head checkpoint to a GQA checkpoint, each group key and value head should be constructed
-            by meanpooling all the original heads within that group. For more details checkout [this
-            paper](https://arxiv.org/pdf/2305.13245.pdf). If it is not specified, will default to `32`.
-        hidden_act (`str` or `function`, *optional*, defaults to `"silu"`):
-            The non-linear activation function (function or string) in the decoder.
-        max_position_embeddings (`int`, *optional*, defaults to 32768):
-            The maximum sequence length that this model might ever be used with.
-        initializer_range (`float`, *optional*, defaults to 0.02):
-            The standard deviation of the truncated_normal_initializer for initializing all weight matrices.
-        rms_norm_eps (`float`, *optional*, defaults to 1e-06):
-            The epsilon used by the rms normalization layers.
-        use_cache (`bool`, *optional*, defaults to `True`):
-            Whether or not the model should return the last key/values attentions (not used by all models). Only
-            relevant if `config.is_decoder=True`.
-        tie_word_embeddings (`bool`, *optional*, defaults to `False`):
-            Whether the model's input and output word embeddings should be tied.
-        rope_theta (`float`, *optional*, defaults to 10000.0):
-            The base period of the RoPE embeddings.
-        rope_scaling (`Dict`, *optional*):
-            Dictionary containing the scaling configuration for the RoPE embeddings. NOTE: if you apply new rope type
-            and you expect the model to work on longer `max_position_embeddings`, we recommend you to update this value
-            accordingly.
-            Expected contents:
-                `rope_type` (`str`):
-                    The sub-variant of RoPE to use. Can be one of ['default', 'linear', 'dynamic', 'yarn', 'longrope',
-                    'llama3'], with 'default' being the original RoPE implementation.
-                `factor` (`float`, *optional*):
-                    Used with all rope types except 'default'. The scaling factor to apply to the RoPE embeddings. In
-                    most scaling types, a `factor` of x will enable the model to handle sequences of length x *
-                    original maximum pre-trained length.
-                `original_max_position_embeddings` (`int`, *optional*):
-                    Used with 'dynamic', 'longrope' and 'llama3'. The original max position embeddings used during
-                    pretraining.
-                `attention_factor` (`float`, *optional*):
-                    Used with 'yarn' and 'longrope'. The scaling factor to be applied on the attention
-                    computation. If unspecified, it defaults to value recommended by the implementation, using the
-                    `factor` field to infer the suggested value.
-                `beta_fast` (`float`, *optional*):
-                    Only used with 'yarn'. Parameter to set the boundary for extrapolation (only) in the linear
-                    ramp function. If unspecified, it defaults to 32.
-                `beta_slow` (`float`, *optional*):
-                    Only used with 'yarn'. Parameter to set the boundary for interpolation (only) in the linear
-                    ramp function. If unspecified, it defaults to 1.
-                `short_factor` (`List[float]`, *optional*):
-                    Only used with 'longrope'. The scaling factor to be applied to short contexts (<
-                    `original_max_position_embeddings`). Must be a list of numbers with the same length as the hidden
-                    size divided by the number of attention heads divided by 2
-                `long_factor` (`List[float]`, *optional*):
-                    Only used with 'longrope'. The scaling factor to be applied to long contexts (<
-                    `original_max_position_embeddings`). Must be a list of numbers with the same length as the hidden
-                    size divided by the number of attention heads divided by 2
-                `low_freq_factor` (`float`, *optional*):
-                    Only used with 'llama3'. Scaling factor applied to low frequency components of the RoPE
-                `high_freq_factor` (`float`, *optional*):
-                    Only used with 'llama3'. Scaling factor applied to high frequency components of the RoPE
-        use_sliding_window (`bool`, *optional*, defaults to `False`):
-            Whether to use sliding window attention.
-        sliding_window (`int`, *optional*, defaults to 4096):
-            Sliding window attention (SWA) window size. If not specified, will default to `4096`.
-        max_window_layers (`int`, *optional*, defaults to 28):
-            The number of layers that use SWA (Sliding Window Attention). The bottom layers use SWA while the top use full attention.
-        attention_dropout (`float`, *optional*, defaults to 0.0):
-            The dropout ratio for the attention probabilities.
-
-    ```python
-    >>> from transformers import Qwen2Model, Qwen2Config
-
-    >>> # Initializing a Qwen2 style configuration
-    >>> configuration = Qwen2Config()
-
-    >>> # Initializing a model from the Qwen2-7B style configuration
-    >>> model = Qwen2Model(configuration)
-
-    >>> # Accessing the model configuration
-    >>> configuration = model.config
-    ```"""
-
-    model_type = "qwen2"
-    keys_to_ignore_at_inference = ["past_key_values"]
-
-    def __init__(
-        self,
-        vocab_size=151936,
-        hidden_size=4096,
-        intermediate_size=22016,
-        num_hidden_layers=32,
-        num_attention_heads=32,
-        num_key_value_heads=32,
-        hidden_act="silu",
-        max_position_embeddings=32768,
-        initializer_range=0.02,
-        rms_norm_eps=1e-6,
-        use_cache=True,
-        tie_word_embeddings=False,
-        rope_theta=10000.0,
-        rope_scaling=None,
-        use_sliding_window=False,
-        sliding_window=4096,
-        max_window_layers=28,
-        attention_dropout=0.0,
-        is_causal=True,
-        _attn_implementation="flash_attention_2",
-        qk_norm=True,
-        layer_module="Qwen2DecoderLayer",
-        freeze_und=False,
-        **kwargs,
-    ):
-        super().__init__(
-            vocab_size=vocab_size,
-            hidden_size=hidden_size,
-            intermediate_size=intermediate_size,
-            num_hidden_layers=num_hidden_layers,
-            num_attention_heads=num_attention_heads,
-            num_key_value_heads=num_key_value_heads,
-            hidden_act=hidden_act,
-            max_position_embeddings=max_position_embeddings,
-            initializer_range=initializer_range,
-            rms_norm_eps=rms_norm_eps,
-            use_cache=use_cache,
-            tie_word_embeddings=tie_word_embeddings,
-            rope_theta=rope_theta,
-            rope_scaling=rope_scaling,
-            use_sliding_window=use_sliding_window,
-            sliding_window=sliding_window,
-            max_window_layers=max_window_layers,
-            attention_dropout=attention_dropout,
-            is_causal=is_causal,
-            _attn_implementation=_attn_implementation,
-            **kwargs,
-        )
-        self.qk_norm = qk_norm
-        self.layer_module = layer_module
-        self.freeze_und = freeze_und
 
 
 # Copied from transformers.models.llama.modeling_llama.LlamaRMSNorm with Llama->Qwen2
@@ -483,13 +322,16 @@ class PackedAttentionMoT(nn.Module):
         packed_und_token_indexes: torch.LongTensor,
         packed_gen_token_indexes: torch.LongTensor,
     ):
+        # Create new zero tensors for the query, key, and value states
         packed_query_states = packed_sequence.new_zeros((packed_sequence.shape[0], self.num_heads * self.head_dim))
         packed_key_states = packed_sequence.new_zeros((packed_sequence.shape[0], self.num_key_value_heads * self.head_dim))
         packed_value_states = packed_sequence.new_zeros((packed_sequence.shape[0], self.num_key_value_heads * self.head_dim))
 
+        # Split the tokens into und and gen
         packed_sequence_und = packed_sequence[packed_und_token_indexes]
         packed_sequence_gen = packed_sequence[packed_gen_token_indexes]
 
+        # Project the tokens into the query, key, and value states separately
         packed_query_states[packed_und_token_indexes] = self.q_proj(packed_sequence_und)
         packed_query_states[packed_gen_token_indexes] = self.q_proj_moe_gen(packed_sequence_gen)
 
@@ -499,36 +341,52 @@ class PackedAttentionMoT(nn.Module):
         packed_value_states[packed_und_token_indexes] = self.v_proj(packed_sequence_und)
         packed_value_states[packed_gen_token_indexes] = self.v_proj_moe_gen(packed_sequence_gen)
 
+        # Reshape the states to the correct dimensions for multi-head attention
         packed_query_states = packed_query_states.view(-1, self.num_heads, self.head_dim)
         packed_key_states = packed_key_states.view(-1, self.num_key_value_heads, self.head_dim)
         packed_value_states = packed_value_states.view(-1, self.num_key_value_heads, self.head_dim)
+
+        # Freeze the value states for the und tokens if specified
         if self.config.freeze_und:
             packed_value_states[packed_und_token_indexes] = packed_value_states[packed_und_token_indexes].detach()
 
+        # Create new zero tensors for the query and key states, for GQA expansion
         packed_query_states_ = packed_query_states.new_zeros(packed_query_states.shape)
         packed_key_states_ = packed_key_states.new_zeros(packed_key_states.shape)
 
+        # RMS Normalize the query states for the und tokens
         packed_query_states_[packed_und_token_indexes] = self.q_norm(packed_query_states[packed_und_token_indexes])
+        # Freeze the query states for the und tokens if specified
         if self.config.freeze_und:
             packed_query_states_[packed_und_token_indexes] = packed_query_states_[packed_und_token_indexes].detach()
+
+        # RMS Normalize the query states for the gen tokens
         packed_query_states_[packed_gen_token_indexes] = self.q_norm_moe_gen(packed_query_states[packed_gen_token_indexes])
 
+        # RMS Normalize the key states for the und tokens
         packed_key_states_[packed_und_token_indexes] = self.k_norm(packed_key_states[packed_und_token_indexes])
+
+        # Freeze the key states for the und tokens if specified
         if self.config.freeze_und:
             packed_key_states_[packed_und_token_indexes] = packed_key_states_[packed_und_token_indexes].detach()
         packed_key_states_[packed_gen_token_indexes] = self.k_norm_moe_gen(packed_key_states[packed_gen_token_indexes])
 
+        # Apply rotary position embeddings
         packed_cos, packed_sin = packed_position_embeddings
         packed_query_states_, packed_key_states_ = apply_rotary_pos_emb(
             packed_query_states_, packed_key_states_, packed_cos, packed_sin, unsqueeze_dim=1
         )
 
+        # Unpack the flattened qkv and masks, if mask is a list, call sdpa
         if isinstance(attention_mask, List):
+            # Repeat the GQA'ed key and value states to the correct dimensions for multi-head attention
             packed_key_states_ = packed_key_states_[:, :, None, :].repeat(1, 1, self.num_key_value_groups, 1)
             packed_key_states_ = packed_key_states_.reshape(-1, self.num_heads, self.head_dim)
             packed_value_states = packed_value_states[:, :, None, :].repeat(1, 1, self.num_key_value_groups, 1)
             packed_value_states = packed_value_states.reshape(-1, self.num_heads, self.head_dim)
 
+            # Permute the head and cu_seqlen dimensions, rephrase multihead as batched attention operation
+            # also split the flattened varlen qkv and masks into per-batch chunks
             unpacked_query_states = packed_query_states_.transpose(0, 1).split(sample_lens, dim=1)
             unpacked_key_states = packed_key_states_.transpose(0, 1).split(sample_lens, dim=1)
             unpacked_value_states = packed_value_states.transpose(0, 1).split(sample_lens, dim=1)
@@ -538,10 +396,16 @@ class PackedAttentionMoT(nn.Module):
             for query_states, key_states, value_states, attention_mask_per_sample in zip(
                 unpacked_query_states, unpacked_key_states, unpacked_value_states, attention_mask
             ):
+                # unpack_query_state: [num_heads, L, head_dim]
+                # unpack_key_state: [num_heads, L, head_dim]
+                # unpack_value_state: [num_heads, L, head_dim]
+                # attention_mask_per_sample: [1, L, L]
+
+                # Apply scaled dot product attention to the split single batch
                 with sdpa_kernel(backends=[SDPBackend.EFFICIENT_ATTENTION]):
                     attn_output = scaled_dot_product_attention(
-                        query_states.to(torch.bfloat16).unsqueeze(0), 
-                        key_states.to(torch.bfloat16).unsqueeze(0), 
+                        query_states.to(torch.bfloat16).unsqueeze(0),
+                        key_states.to(torch.bfloat16).unsqueeze(0),
                         value_states.to(torch.bfloat16).unsqueeze(0),
                         attention_mask_per_sample.to(torch.bfloat16).unsqueeze(0),
                     )
@@ -557,8 +421,8 @@ class PackedAttentionMoT(nn.Module):
             packed_value_states = pad_sequence(packed_value_states.transpose(0, 1), pad_size)
             packed_attn_output = flex_attention(
                 packed_query_states_.unsqueeze(0), # 1, num_head, L, head_dim
-                packed_key_states_.unsqueeze(0), 
-                packed_value_states.unsqueeze(0), 
+                packed_key_states_.unsqueeze(0),
+                packed_value_states.unsqueeze(0),
                 enable_gqa=True,
                 block_mask=attention_mask,
             )
@@ -678,9 +542,9 @@ class PackedAttentionMoT(nn.Module):
 
 class Qwen2MoTDecoderLayer(nn.Module):
     def __init__(
-        self, 
-        config, 
-        layer_idx: Optional[int] = None, 
+        self,
+        config,
+        layer_idx: Optional[int] = None,
         attn_module: Optional[type] = PackedAttentionMoT,
     ):
         super().__init__()
@@ -714,6 +578,7 @@ class Qwen2MoTDecoderLayer(nn.Module):
 
         residual = packed_sequence
         packed_sequence_ = packed_sequence.new_zeros(packed_sequence.shape)
+        # Separately mapping the und and gen tokens with the proper expert, like in the MMDiT models.
         packed_sequence_[packed_und_token_indexes] = self.input_layernorm(packed_sequence[packed_und_token_indexes])
         packed_sequence_[packed_gen_token_indexes] = self.input_layernorm_moe_gen(packed_sequence[packed_gen_token_indexes])
 
@@ -726,22 +591,30 @@ class Qwen2MoTDecoderLayer(nn.Module):
             packed_und_token_indexes=packed_und_token_indexes,
             packed_gen_token_indexes=packed_gen_token_indexes,
         )
+        # Enforce the und tokens to be frozen.
         if self.freeze_und:
             packed_sequence_[packed_und_token_indexes] = packed_sequence_[packed_und_token_indexes].detach()
+
+        # Residual connection.
         packed_sequence = residual + packed_sequence_
 
         # Fully Connected
         residual = packed_sequence
         packed_sequence_ = packed_sequence.new_zeros(packed_sequence.shape)
+        # Map the und tokens with 1st MLP.
         packed_sequence_[packed_und_token_indexes] = self.mlp(
             self.post_attention_layernorm(packed_sequence[packed_und_token_indexes])
         )
+        # Enforce the und tokens to be frozen.
         if self.freeze_und:
             packed_sequence_[packed_und_token_indexes] = packed_sequence_[packed_und_token_indexes].detach()
-    
+
+        # Map the gen tokens with 2nd MLP.
         packed_sequence_[packed_gen_token_indexes] = self.mlp_moe_gen(
             self.post_attention_layernorm_moe_gen(packed_sequence[packed_gen_token_indexes])
         )
+
+        # Residual connection.
         packed_sequence = residual + packed_sequence_
 
         return packed_sequence

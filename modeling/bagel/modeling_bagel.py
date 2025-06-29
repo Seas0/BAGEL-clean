@@ -17,10 +17,10 @@ from data.data_utils import (
     get_flattened_position_ids_interpolate,
     patchify, 
 )
-from .qwen2_navit import NaiveCache
+from .modeling_qwen2_navit import NaiveCache
 from .modeling_utils import MLPconnector, TimestepEmbedder, PositionEmbedding
 
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 class BagelConfig(PretrainedConfig):
@@ -508,7 +508,7 @@ class Bagel(PreTrainedModel):
         packed_sequence = packed_text_embedding.new_zeros((sum(packed_seqlens), self.hidden_size))
         packed_sequence[packed_text_indexes] = packed_text_embedding
 
-        padded_latent = vae_model.encode(padded_images)
+        padded_latent = vae_model.encode(padded_images.to(vae_model.encoder.conv_in.weight))
 
         p = self.latent_patch_size
         packed_latent = list()

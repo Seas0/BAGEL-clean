@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-from .bagel import BagelConfig, Bagel
-from .qwen2_navit import Qwen2Config, Qwen2Model, Qwen2ForCausalLM
-from .siglip_navit import SiglipVisionConfig, SiglipVisionModel
+from .modeling_bagel import BagelConfig, Bagel
+from .configuration_qwen2_navit import Qwen2Config
+from .modeling_qwen2_navit import Qwen2Model, Qwen2ForCausalLM
+from .modeling_siglip_navit import SiglipVisionConfig, SiglipVisionModel
 
 
 __all__ = [

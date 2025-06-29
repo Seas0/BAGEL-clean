@@ -21,12 +21,12 @@ from torch.distributed.fsdp.wrap import transformer_auto_wrap_policy
 from safetensors.torch import load_file, save_file
 
 from modeling.bagel.modeling_utils import MLPconnector, TimestepEmbedder, PositionEmbedding
-from modeling.bagel.qwen2_navit import (
+from modeling.bagel.modeling_qwen2_navit import (
     # Qwen2DecoderLayer, 
     # Qwen2MoEDecoderLayer, 
     Qwen2MoTDecoderLayer,
 )
-from modeling.bagel.siglip_navit import SiglipEncoderLayer, SiglipVisionTransformer
+from modeling.bagel.modeling_siglip_navit import SiglipEncoderLayer, SiglipVisionTransformer
 
 
 class FSDPConfig:
